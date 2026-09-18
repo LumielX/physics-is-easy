@@ -1,0 +1,108 @@
+/* ──────────────────────────────────────────────────────────────
+   motion.css — every animation in the app lives here or uses one
+   of these classes, so `prefers-reduced-motion` can be honoured
+   in exactly one place.
+   ────────────────────────────────────────────────────────────── */
+
+@keyframes pie-fade-up {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes pie-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pie-pop {
+  0%   { transform: scale(0.92); opacity: 0; }
+  60%  { transform: scale(1.02); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes pie-shimmer {
+  from { background-position: -420px 0; }
+  to   { background-position: 420px 0; }
+}
+@keyframes pie-pulse-ring {
+  0%   { box-shadow: 0 0 0 0 var(--ring); }
+  70%  { box-shadow: 0 0 0 10px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+@keyframes pie-drift {
+  0%   { transform: translate3d(0, 0, 0); }
+  50%  { transform: translate3d(0, -12px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+/* Scroll reveal: element starts hidden, `.is-visible` is added by
+   the IntersectionObserver in components/ui/Reveal.tsx */
+.pie-reveal {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.pie-reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.pie-animate-fade-up { animation: pie-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.pie-animate-fade-in { animation: pie-fade-in 0.4s ease both; }
+.pie-animate-pop { animation: pie-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.pie-animate-drift { animation: pie-drift 6s ease-in-out infinite; }
+
+.pie-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 0%,
+    var(--surface-3) 40%,
+    var(--surface-2) 80%
+  );
+  background-size: 420px 100%;
+  animation: pie-shimmer 1.3s linear infinite;
+}
+
+/* Interactive affordances */
+.pie-press { transition: transform 0.12s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease; }
+.pie-press:active { transform: translateY(1px) scale(0.99); }
+
+.pie-lift { transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease, border-color 0.25s ease; }
+@media (hover: hover) {
+  .pie-lift:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+}
+
+.pie-underline {
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 2px;
+  transition: background-size 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (hover: hover) {
+  .pie-underline:hover { background-size: 100% 2px; }
+}
+
+/* ── The single opt-out ─────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .pie-reveal { opacity: 1; transform: none; }
+  .pie-skeleton { animation: none; }
+}
+
+/* Manual override from Settings — mirrors the media query above. */
+:root[data-motion='reduced'] *,
+:root[data-motion='reduced'] *::before,
+:root[data-motion='reduced'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+:root[data-motion='reduced'] .pie-reveal { opacity: 1; transform: none; }

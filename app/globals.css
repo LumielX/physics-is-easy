@@ -1,0 +1,244 @@
+@import 'tailwindcss';
+@import '../styles/themes.css';
+@import '../styles/motion.css';
+
+@source '../app';
+@source '../components';
+@source '../lib';
+@source '../content';
+
+/* Expose the design tokens as Tailwind utilities (bg-surface, text-muted, …).
+   `inline` keeps them as var() references so theme switching stays pure CSS. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-subtle: var(--bg-subtle);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-faint: var(--text-faint);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-softer: var(--accent-softer);
+  --color-accent-line: var(--accent-line);
+  --color-accent-text: var(--accent-text);
+  --color-accent-contrast: var(--accent-contrast);
+
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  --font-sans: var(--font-thai), 'IBM Plex Sans Thai', ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', 'SFMono-Regular', 'Cascadia Mono', Consolas, monospace;
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: calc(var(--header-h) + 64px);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-feature-settings: 'ss01';
+    line-height: 1.7;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  p { text-wrap: pretty; }
+
+  a { color: inherit; text-decoration: none; }
+
+  button, input, select, textarea { font: inherit; color: inherit; }
+
+  img, svg, canvas, video { display: block; max-width: 100%; }
+
+  /* One consistent focus ring everywhere, including inside simulators. */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--accent) 28%, transparent);
+  }
+
+  /* Scrollbars that don't fight the dark theme */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+  *::-webkit-scrollbar { width: 10px; height: 10px; }
+  *::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 99px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-track { background: transparent; }
+}
+
+@layer components {
+  /* Skip link — first tab stop on every page */
+  .pie-skip {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    z-index: 200;
+    transform: translateY(-160%);
+    background: var(--accent);
+    color: var(--accent-contrast);
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    transition: transform 0.2s ease;
+  }
+  .pie-skip:focus { transform: none; }
+
+  /* Reading column used by lesson content */
+  .pie-prose {
+    font-size: var(--prose-size);
+    line-height: var(--prose-leading);
+    color: var(--text);
+  }
+  .pie-prose > * + * { margin-top: 1.1em; }
+
+  /* KaTeX: keep long equations scrollable instead of breaking layout */
+  .pie-math-block {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 2px;
+    scrollbar-width: thin;
+  }
+  .katex { font-size: 1.05em; }
+  .katex-display { margin: 0; }
+
+  /* Frosted header */
+  .pie-blur {
+    background: color-mix(in oklab, var(--bg) 82%, transparent);
+    backdrop-filter: saturate(160%) blur(12px);
+    -webkit-backdrop-filter: saturate(160%) blur(12px);
+  }
+
+  /* Simulator slider — native <input type="range"> so keyboard and AT support
+     come for free; only the paint is customised. Track shows the filled
+     portion via the --pct variable set by ParamSlider. */
+  .pie-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 26px;
+    background: transparent;
+    cursor: pointer;
+    touch-action: pan-y;
+  }
+  .pie-range::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 99px;
+    background: linear-gradient(
+      to right,
+      var(--accent) 0%,
+      var(--accent) var(--pct, 50%),
+      var(--surface-3) var(--pct, 50%),
+      var(--surface-3) 100%
+    );
+  }
+  .pie-range::-moz-range-track {
+    height: 6px;
+    border-radius: 99px;
+    background: var(--surface-3);
+  }
+  .pie-range::-moz-range-progress {
+    height: 6px;
+    border-radius: 99px;
+    background: var(--accent);
+  }
+  .pie-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    margin-top: -7px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 3px solid var(--accent);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.12s ease;
+  }
+  .pie-range::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 3px solid var(--accent);
+    box-shadow: var(--shadow-sm);
+  }
+  .pie-range:active::-webkit-slider-thumb { transform: scale(1.15); }
+  .pie-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--ring); }
+  .pie-range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(--ring); }
+  .pie-range:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Decorative grid used behind hero sections */
+  .pie-grid-bg {
+    background-image:
+      linear-gradient(to right, var(--border) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+  }
+}
+
+@layer utilities {
+  .pie-container {
+    width: 100%;
+    max-width: var(--content-max);
+    margin-inline: auto;
+    padding-inline: clamp(16px, 4vw, 32px);
+  }
+  .pie-tabular { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+  .pie-no-scrollbar::-webkit-scrollbar { display: none; }
+  .pie-no-scrollbar { scrollbar-width: none; }
+}

@@ -1,0 +1,151 @@
+/* ──────────────────────────────────────────────────────────────
+   themes.css — Design tokens
+   Light/Dark switch by [data-theme] on <html>.
+   Accent (per physics strand) switches by [data-accent] on any
+   subtree, so a chapter page can re-colour itself without JS.
+   ────────────────────────────────────────────────────────────── */
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --bg: #f5f7fc;
+  --bg-subtle: #eaeef7;
+  --surface: #ffffff;
+  --surface-2: #f8fafd;
+  --surface-3: #eff3fa;
+
+  /* Text */
+  --text: #0f1420;
+  --text-muted: #58607a;
+  --text-faint: #858ca6;
+
+  /* Lines & effects */
+  --border: #e0e5f0;
+  --border-strong: #c9d1e2;
+  --ring: color-mix(in oklab, var(--accent) 55%, transparent);
+  --shadow-sm: 0 1px 2px rgb(16 20 32 / 0.05), 0 1px 3px rgb(16 20 32 / 0.06);
+  --shadow-md: 0 4px 12px rgb(16 20 32 / 0.07), 0 2px 4px rgb(16 20 32 / 0.05);
+  --shadow-lg: 0 18px 40px rgb(16 20 32 / 0.1), 0 4px 12px rgb(16 20 32 / 0.06);
+
+  /* Semantic */
+  --ok: #0f9d58;
+  --ok-soft: #e6f6ed;
+  --warn: #b45309;
+  --warn-soft: #fdf3e2;
+  --bad: #d92d20;
+  --bad-soft: #fdeceb;
+  --info: #0b72c4;
+  --info-soft: #e8f2fc;
+
+  /* Plot / canvas palette (used by PlotCanvas + 2D simulators) */
+  --plot-grid: #e6eaf3;
+  --plot-axis: #9aa2b8;
+  --series-1: #f97316;
+  --series-2: #0ea5e9;
+  --series-3: #a855f7;
+  --series-4: #10b981;
+
+  /* Default accent (indigo) — overridden per strand below */
+  --accent: #4f5bd5;
+  --accent-strong: #3f49b8;
+  --accent-contrast: #ffffff;
+
+  /* Derived accent tints (computed, never hard-coded per theme) */
+  --accent-soft: color-mix(in oklab, var(--accent) 12%, var(--surface));
+  --accent-softer: color-mix(in oklab, var(--accent) 6%, var(--surface));
+  --accent-line: color-mix(in oklab, var(--accent) 32%, var(--border));
+  --accent-text: color-mix(in oklab, var(--accent) 82%, var(--text));
+
+  /* Layout metrics */
+  --header-h: 60px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 26px;
+  --content-max: 1200px;
+  --prose-max: 72ch;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #070a12;
+  --bg-subtle: #0b1020;
+  --surface: #121728;
+  --surface-2: #171d31;
+  --surface-3: #1e2539;
+
+  --text: #e8edf9;
+  --text-muted: #9aa3ba;
+  --text-faint: #6f7995;
+
+  --border: #232b41;
+  --border-strong: #35405c;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 6px 16px rgb(0 0 0 / 0.45);
+  --shadow-lg: 0 22px 48px rgb(0 0 0 / 0.55);
+
+  --ok: #34d399;
+  --ok-soft: #10281f;
+  --warn: #fbbf24;
+  --warn-soft: #2a2110;
+  --bad: #f87171;
+  --bad-soft: #2d1416;
+  --info: #60a5fa;
+  --info-soft: #101f33;
+
+  --plot-grid: #1e2537;
+  --plot-axis: #5c6683;
+  --series-1: #fb923c;
+  --series-2: #38bdf8;
+  --series-3: #c084fc;
+  --series-4: #34d399;
+
+  --accent: #8b95f5;
+  --accent-strong: #a3abff;
+  --accent-contrast: #0a0d18;
+
+  --accent-soft: color-mix(in oklab, var(--accent) 16%, var(--surface));
+  --accent-softer: color-mix(in oklab, var(--accent) 9%, var(--surface));
+  --accent-line: color-mix(in oklab, var(--accent) 38%, var(--border));
+  --accent-text: color-mix(in oklab, var(--accent) 88%, var(--text));
+}
+
+/* ── Accent per strand ─────────────────────────────────────────
+   These only set the three base accent variables; every tint is
+   derived from them, so a new strand needs exactly three values. */
+
+[data-accent='foundations'] { --accent: #5a63d8; --accent-strong: #464fc0; --accent-contrast: #fff; }
+[data-accent='mechanics']   { --accent: #e4631a; --accent-strong: #c2500f; --accent-contrast: #fff; }
+[data-accent='waves']       { --accent: #8b3fd4; --accent-strong: #7430b8; --accent-contrast: #fff; }
+[data-accent='electromagnetism'] { --accent: #0b7fc7; --accent-strong: #0668a6; --accent-contrast: #fff; }
+[data-accent='thermal']     { --accent: #c9372c; --accent-strong: #a82a21; --accent-contrast: #fff; }
+[data-accent='modern']      { --accent: #0f8f6f; --accent-strong: #0b735a; --accent-contrast: #fff; }
+
+:root[data-theme='dark'] [data-accent='foundations'] { --accent: #9aa2ff; --accent-strong: #b4b9ff; --accent-contrast: #0a0d18; }
+:root[data-theme='dark'] [data-accent='mechanics']   { --accent: #ff9a52; --accent-strong: #ffb377; --accent-contrast: #16100a; }
+:root[data-theme='dark'] [data-accent='waves']       { --accent: #c58bff; --accent-strong: #d5a8ff; --accent-contrast: #140a1e; }
+:root[data-theme='dark'] [data-accent='electromagnetism'] { --accent: #4fb8f5; --accent-strong: #7dcbf8; --accent-contrast: #05131e; }
+:root[data-theme='dark'] [data-accent='thermal']     { --accent: #ff8177; --accent-strong: #ffa199; --accent-contrast: #1c0b09; }
+:root[data-theme='dark'] [data-accent='modern']      { --accent: #3ad3a8; --accent-strong: #6ee0c0; --accent-contrast: #04180f; }
+
+/* Re-derive tints whenever a strand accent is applied. */
+[data-accent] {
+  --accent-soft: color-mix(in oklab, var(--accent) 12%, var(--surface));
+  --accent-softer: color-mix(in oklab, var(--accent) 6%, var(--surface));
+  --accent-line: color-mix(in oklab, var(--accent) 32%, var(--border));
+  --accent-text: color-mix(in oklab, var(--accent) 82%, var(--text));
+  --ring: color-mix(in oklab, var(--accent) 55%, transparent);
+}
+:root[data-theme='dark'] [data-accent] {
+  --accent-soft: color-mix(in oklab, var(--accent) 16%, var(--surface));
+  --accent-softer: color-mix(in oklab, var(--accent) 9%, var(--surface));
+  --accent-line: color-mix(in oklab, var(--accent) 38%, var(--border));
+  --accent-text: color-mix(in oklab, var(--accent) 88%, var(--text));
+}
+
+/* Reader font-size preference (Settings page) */
+:root[data-density='comfortable'] { --prose-size: 1.0625rem; --prose-leading: 1.85; }
+:root[data-density='large']       { --prose-size: 1.1875rem; --prose-leading: 1.95; }
+:root                              { --prose-size: 1rem; --prose-leading: 1.8; }
