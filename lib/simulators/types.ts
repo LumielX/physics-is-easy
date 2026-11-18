@@ -40,8 +40,6 @@ export interface SimulatorMeta {
   /** Chapter this simulator belongs to (id from the content registry). */
   chapterId: string;
   strand: Strand;
-  /** True when a genuine 3-D view adds understanding (see DECISIONS D-008). */
-  supports3D: boolean;
   /** What the learner should try — shown on the simulator index page. */
   tryThis: string[];
   tags: string[];

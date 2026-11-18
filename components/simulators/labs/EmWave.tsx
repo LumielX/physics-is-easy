@@ -3,7 +3,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { SimulatorShell } from '../SimulatorShell';
 import { SimCanvas } from '../SimCanvas';
-import { Scene3DHost } from '@/components/three/Scene3DHost';
 import { useSimParams } from '@/lib/simulators/useSimParams';
 import type { ParamSpec, Preset, Readout } from '@/lib/simulators/types';
 import { drawLabel, drawPolyline, makeView, roundRect } from '@/lib/simulators/draw';
@@ -50,7 +49,6 @@ export default function EmWave() {
     PRESETS,
   );
   const [running, setRunning] = useState(true);
-  const [view, setView] = useState<'2d' | '3d'>('2d');
   const valuesRef = useRef(values);
   valuesRef.current = values;
 
@@ -92,144 +90,132 @@ export default function EmWave() {
       running={running}
       onToggleRun={() => setRunning((r) => !r)}
       onReset={reset}
-      view={view}
-      onViewChange={setView}
       hint="เลื่อนความถี่จากวิทยุไปแกมมาแล้วดูพลังงานโฟตอน — ต่างกันได้เป็นล้านล้านเท่า นี่คือเหตุผลที่รังสีแกมมาอันตรายแต่คลื่นวิทยุไม่เป็นไร ทั้งที่เป็นคลื่นชนิดเดียวกัน"
       equations={['c = fλ = 3.00 × 10⁸ m/s', 'E = hf = hc/λ', 'E ⊥ B ⊥ ทิศการเคลื่อนที่']}
     >
-      {view === '3d' ? (
-        <Scene3DHost
-          sceneId="em-wave"
-          values={values}
-          running={running}
-          label="คลื่นแม่เหล็กไฟฟ้าสามมิติ แสดงสนาม E และ B ตั้งฉากกัน"
-          onFallback={() => setView('2d')}
-        />
-      ) : (
-        <SimCanvas
-          label="กราฟสนามไฟฟ้าและสนามแม่เหล็กของคลื่นแม่เหล็กไฟฟ้า พร้อมแถบสเปกตรัม"
-          running={running}
-          resetKey={resetKey}
-          aspect={16 / 9}
-          minHeight={300}
-          frame={({ ctx, width, height, time, colors }) => {
-            const v = valuesRef.current;
-            const waveH = height - 86;
+      <SimCanvas
+        label="กราฟสนามไฟฟ้าและสนามแม่เหล็กของคลื่นแม่เหล็กไฟฟ้า พร้อมแถบสเปกตรัม"
+        running={running}
+        resetKey={resetKey}
+        aspect={16 / 9}
+        minHeight={300}
+        frame={({ ctx, width, height, time, colors }) => {
+          const v = valuesRef.current;
+          const waveH = height - 86;
 
-            const view2d = makeView({
-              width,
-              height: waveH,
-              xMin: 0,
-              xMax: 1,
-              yMin: -1.7,
-              yMax: 1.7,
-              uniform: false,
-              padding: { left: 40, right: 18, top: 14, bottom: 14 },
-            });
+          const view2d = makeView({
+            width,
+            height: waveH,
+            xMin: 0,
+            xMax: 1,
+            yMin: -1.7,
+            yMax: 1.7,
+            uniform: false,
+            padding: { left: 40, right: 18, top: 14, bottom: 14 },
+          });
 
-            // Axis of propagation
-            ctx.save();
-            ctx.strokeStyle = colors.border;
-            ctx.lineWidth = 1.5;
+          // Axis of propagation
+          ctx.save();
+          ctx.strokeStyle = colors.border;
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(view2d.sx(0), view2d.sy(0));
+          ctx.lineTo(view2d.sx(1), view2d.sy(0));
+          ctx.stroke();
+          ctx.restore();
+
+          const k = 2 * Math.PI * v.frequency;
+          const omega = 2.4;
+
+          const eField: { x: number; y: number }[] = [];
+          const bField: { x: number; y: number }[] = [];
+          for (let i = 0; i <= 320; i++) {
+            const x = i / 320;
+            const y = v.amplitude * Math.sin(k * x - omega * time);
+            eField.push({ x: view2d.sx(x), y: view2d.sy(y) });
+            // B is drawn at half height to suggest the perpendicular plane.
+            bField.push({ x: view2d.sx(x), y: view2d.sy(y * 0.45) });
+          }
+
+          // Field "combs" make the vector nature explicit
+          ctx.save();
+          ctx.globalAlpha = 0.5;
+          for (let i = 0; i <= 40; i++) {
+            const x = i / 40;
+            const y = v.amplitude * Math.sin(k * x - omega * time);
+            ctx.strokeStyle = colors.series[0];
+            ctx.lineWidth = 1.4;
             ctx.beginPath();
-            ctx.moveTo(view2d.sx(0), view2d.sy(0));
-            ctx.lineTo(view2d.sx(1), view2d.sy(0));
+            ctx.moveTo(view2d.sx(x), view2d.sy(0));
+            ctx.lineTo(view2d.sx(x), view2d.sy(y));
             ctx.stroke();
-            ctx.restore();
-
-            const k = 2 * Math.PI * v.frequency;
-            const omega = 2.4;
-
-            const eField: { x: number; y: number }[] = [];
-            const bField: { x: number; y: number }[] = [];
-            for (let i = 0; i <= 320; i++) {
-              const x = i / 320;
-              const y = v.amplitude * Math.sin(k * x - omega * time);
-              eField.push({ x: view2d.sx(x), y: view2d.sy(y) });
-              // B is drawn at half height to suggest the perpendicular plane.
-              bField.push({ x: view2d.sx(x), y: view2d.sy(y * 0.45) });
-            }
-
-            // Field "combs" make the vector nature explicit
-            ctx.save();
-            ctx.globalAlpha = 0.5;
-            for (let i = 0; i <= 40; i++) {
-              const x = i / 40;
-              const y = v.amplitude * Math.sin(k * x - omega * time);
-              ctx.strokeStyle = colors.series[0];
-              ctx.lineWidth = 1.4;
-              ctx.beginPath();
-              ctx.moveTo(view2d.sx(x), view2d.sy(0));
-              ctx.lineTo(view2d.sx(x), view2d.sy(y));
-              ctx.stroke();
-              // B lies in the plane perpendicular to the screen, so it is drawn
-              // as a horizontal tick whose length tracks the same sine.
-              ctx.strokeStyle = colors.series[1];
-              ctx.beginPath();
-              ctx.moveTo(view2d.sx(x), view2d.sy(0));
-              ctx.lineTo(view2d.sx(x) + y * 16, view2d.sy(0));
-              ctx.stroke();
-            }
-            ctx.restore();
-
-            drawPolyline(ctx, eField, colors.series[0], 2.6);
-            drawPolyline(ctx, bField, colors.series[1], 2);
-
-            drawLabel(ctx, 'สนามไฟฟ้า E', view2d.sx(0) + 6, view2d.sy(1.5), colors, {
-              align: 'left',
-              size: 11,
-              color: colors.series[0],
-            });
-            drawLabel(ctx, 'สนามแม่เหล็ก B (ตั้งฉากกับจอ)', view2d.sx(0) + 6, view2d.sy(-1.5), colors, {
-              align: 'left',
-              size: 11,
-              color: colors.series[1],
-            });
-
-            /* Spectrum strip */
-            const stripY = height - 62;
-            const stripH = 22;
-            const total = 21 - 4;
-            BANDS.forEach(([name, lo, hi, color]) => {
-              const x1 = ((lo - 4) / total) * (width - 40) + 20;
-              const x2 = ((hi - 4) / total) * (width - 40) + 20;
-              ctx.fillStyle = color;
-              ctx.globalAlpha = 0.85;
-              roundRect(ctx, x1, stripY, x2 - x1 - 1.5, stripH, 3);
-              ctx.fill();
-              ctx.globalAlpha = 1;
-              if (x2 - x1 > 54) {
-                ctx.fillStyle = '#fff';
-                ctx.font = '9.5px system-ui, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(name, (x1 + x2) / 2, stripY + stripH / 2);
-              }
-            });
-
-            // Marker for the current frequency
-            const markX = ((v.logFreq - 4) / total) * (width - 40) + 20;
-            ctx.save();
-            ctx.strokeStyle = colors.text;
-            ctx.lineWidth = 2;
+            // B lies in the plane perpendicular to the screen, so it is drawn
+            // as a horizontal tick whose length tracks the same sine.
+            ctx.strokeStyle = colors.series[1];
             ctx.beginPath();
-            ctx.moveTo(markX, stripY - 6);
-            ctx.lineTo(markX, stripY + stripH + 6);
+            ctx.moveTo(view2d.sx(x), view2d.sy(0));
+            ctx.lineTo(view2d.sx(x) + y * 16, view2d.sy(0));
             ctx.stroke();
-            ctx.restore();
+          }
+          ctx.restore();
 
-            const f = 10 ** v.logFreq;
-            drawLabel(
-              ctx,
-              `f = 10^${v.logFreq.toFixed(1)} Hz · λ = ${formatLength(C_LIGHT / f)}`,
-              width / 2,
-              height - 18,
-              colors,
-              { align: 'center', size: 11.5, color: colors.text },
-            );
-          }}
-        />
-      )}
+          drawPolyline(ctx, eField, colors.series[0], 2.6);
+          drawPolyline(ctx, bField, colors.series[1], 2);
+
+          drawLabel(ctx, 'สนามไฟฟ้า E', view2d.sx(0) + 6, view2d.sy(1.5), colors, {
+            align: 'left',
+            size: 11,
+            color: colors.series[0],
+          });
+          drawLabel(ctx, 'สนามแม่เหล็ก B (ตั้งฉากกับจอ)', view2d.sx(0) + 6, view2d.sy(-1.5), colors, {
+            align: 'left',
+            size: 11,
+            color: colors.series[1],
+          });
+
+          /* Spectrum strip */
+          const stripY = height - 62;
+          const stripH = 22;
+          const total = 21 - 4;
+          BANDS.forEach(([name, lo, hi, color]) => {
+            const x1 = ((lo - 4) / total) * (width - 40) + 20;
+            const x2 = ((hi - 4) / total) * (width - 40) + 20;
+            ctx.fillStyle = color;
+            ctx.globalAlpha = 0.85;
+            roundRect(ctx, x1, stripY, x2 - x1 - 1.5, stripH, 3);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+            if (x2 - x1 > 54) {
+              ctx.fillStyle = '#fff';
+              ctx.font = '9.5px system-ui, sans-serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(name, (x1 + x2) / 2, stripY + stripH / 2);
+            }
+          });
+
+          // Marker for the current frequency
+          const markX = ((v.logFreq - 4) / total) * (width - 40) + 20;
+          ctx.save();
+          ctx.strokeStyle = colors.text;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(markX, stripY - 6);
+          ctx.lineTo(markX, stripY + stripH + 6);
+          ctx.stroke();
+          ctx.restore();
+
+          const f = 10 ** v.logFreq;
+          drawLabel(
+            ctx,
+            `f = 10^${v.logFreq.toFixed(1)} Hz · λ = ${formatLength(C_LIGHT / f)}`,
+            width / 2,
+            height - 18,
+            colors,
+            { align: 'center', size: 11.5, color: colors.text },
+          );
+        }}
+      />
     </SimulatorShell>
   );
 }

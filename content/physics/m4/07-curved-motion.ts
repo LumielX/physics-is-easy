@@ -618,10 +618,10 @@ export const chapter: Chapter = {
       detail: 'Chapter 4: Motion in Two and Three Dimensions; Chapter 13: Gravitation',
     },
     {
-      title: 'NASA Orbital Mechanics Reference',
-      publisher: 'NASA',
-      detail: 'ข้อมูลวงโคจรของดาวเทียมและค่าคงตัวของโลกที่ใช้ในการคำนวณ',
-      url: 'https://www.grc.nasa.gov/www/k-12/rocket/motion.html',
+      title: 'Earth Fact Sheet',
+      publisher: 'NASA Space Science Data Coordinated Archive',
+      detail: 'มวล รัศมี และค่าคงตัวของโลกที่ใช้คำนวณวงโคจรของดาวเทียม',
+      url: 'https://nssdc.gsfc.nasa.gov/planetary/factsheet/earthfact.html',
     },
   ],
 };

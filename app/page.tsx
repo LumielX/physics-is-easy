@@ -33,7 +33,7 @@ export default function HomePage() {
         <div className="pie-container relative flex flex-col items-center gap-6 py-16 text-center sm:py-24">
           <Badge tone="accent" className="pie-animate-fade-in">
             <Icon name="sparkles" size={14} />
-            ครบทุกบท ม.4 – ม.6 ตามหลักสูตร สสวท.
+            ฟิสิกส์ ม.4 – ม.6 อ้างอิงหลักสูตร สสวท.
           </Badge>
 
           <h1 className="pie-animate-fade-up max-w-[18ch] text-[2.2rem] font-bold leading-[1.15] sm:text-[3.2rem] lg:text-[3.8rem]">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import { SimulatorShell } from '../SimulatorShell';
 import { SimCanvas } from '../SimCanvas';
 import { useSimParams } from '@/lib/simulators/useSimParams';

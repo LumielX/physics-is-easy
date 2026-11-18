@@ -24,7 +24,7 @@ export function ReviewSection({ chapter }: { chapter: Chapter }) {
         </h3>
         <div className="grid gap-3 sm:grid-cols-2">
           {chapter.formulas.map((f) => (
-            <Card key={f.id} tone="soft" className="flex flex-col gap-2 p-4">
+            <Card key={f.id} tone="soft" className="flex min-w-0 flex-col gap-2 p-4">
               <p className="text-[0.8rem] font-bold uppercase tracking-[0.08em] text-[var(--accent-text)]">
                 {f.name}
               </p>

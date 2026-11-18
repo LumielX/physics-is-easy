@@ -47,12 +47,6 @@ export default async function SimulatorPage({ params }: { params: Promise<{ id: 
             <span aria-hidden>{strand.icon}</span>
             {strand.label}
           </Badge>
-          {sim.supports3D && (
-            <Badge>
-              <Icon name="cube" size={12} />
-              มีโหมด 3 มิติ
-            </Badge>
-          )}
           {chapter && <Badge>บทที่ {chapter.number}</Badge>}
         </div>
         <h1 className="text-[1.8rem] font-bold sm:text-[2.2rem]">{sim.title}</h1>

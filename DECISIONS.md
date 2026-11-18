@@ -71,7 +71,7 @@
 
 ---
 
-## D-008 · 3D โหลดแบบ opt-in เท่านั้น
+## D-008 · 3D โหลดแบบ opt-in เท่านั้น *(ยกเลิกแล้ว ดู D-016)*
 
 **เลือก:** three.js/r3f โหลดผ่าน `next/dynamic({ ssr: false })` เมื่อผู้ใช้กดปุ่ม "3D" เท่านั้น + auto-fallback เป็น 2D
 **เหตุผล:**
@@ -81,7 +81,7 @@
 
 ---
 
-## D-009 · 3D asset: glTF/GLB + Draco ผ่าน Blender CLI
+## D-009 · 3D asset: glTF/GLB + Draco ผ่าน Blender CLI *(ยกเลิกแล้ว ดู D-016)*
 
 **เลือก:** สร้าง/แปลงโมเดลด้วย Blender 5.2 CLI (`blender --background --python`) แล้ว export `.glb` + Draco compression เก็บใน `public/models/`
 **เหตุผล:** GLB เป็นไฟล์เดียวจบ (mesh+material) โหลดเร็วที่สุดบนเว็บ, Draco ลดขนาด mesh ได้ 5–10 เท่า, สคริปต์ Python ทำให้ asset สร้างซ้ำได้ (reproducible) ไม่ใช่ไฟล์ลอย ๆ ที่แก้ไม่ได้ และเป็นไปตามข้อกำหนดห้ามวาง primitive เปล่า ๆ
@@ -147,3 +147,13 @@
 
 **เลือก:** `IBM Plex Sans Thai` (ผ่าน `next/font/google`) + system mono สำหรับตัวเลข
 **เหตุผล:** เป็นฟอนต์ไทยที่ออกแบบมาคู่กับ Latin โดยตรง มี weight ครบ 100–700 อ่านง่ายบนจอ และ license ฟรี (SIL OFL) `next/font` จะ self-host ให้อัตโนมัติ จึงไม่มี request ไป Google และไม่มี layout shift
+
+---
+
+## D-016 · เอาโหมด 3D ออก เหลือ 2D อย่างเดียว
+
+**เลือก:** ลบ three.js, react-three-fiber, drei, ฉาก 3 มิติทั้ง 11 ฉาก, โมเดล .glb และ pipeline Blender ออก เครื่องจำลองทุกตัวใช้ Canvas 2D และไม่มีปุ่มสลับ 2D/3D อีก
+**เหตุผล:**
+- ภาพ 2D ของทุกเครื่องจำลองแสดงข้อมูลทางฟิสิกส์ครบอยู่แล้ว (ตัวเลข เวกเตอร์ กราฟ) โหมด 3D จึงไม่ได้เพิ่มความเข้าใจมากพอเทียบกับความซับซ้อน
+- ตัด dependency หนัก ๆ ออก ทำให้ bundle เล็กลงและดูแลง่ายขึ้น
+- อุปกรณ์ที่ WebGL ไม่เสถียรจะไม่เจอฉากว่างหรือการสลับกลับ 2D กลางคันอีก

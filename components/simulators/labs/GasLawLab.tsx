@@ -3,7 +3,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { SimulatorShell } from '../SimulatorShell';
 import { SimCanvas } from '../SimCanvas';
-import { Scene3DHost } from '@/components/three/Scene3DHost';
 import { useSimParams } from '@/lib/simulators/useSimParams';
 import type { ParamSpec, Preset, Readout } from '@/lib/simulators/types';
 import { drawAxes, drawGrid, drawLabel, drawPolyline, makeView, niceStep } from '@/lib/simulators/draw';
@@ -44,7 +43,6 @@ export default function GasLawLab() {
     PRESETS,
   );
   const [running, setRunning] = useState(true);
-  const [view, setView] = useState<'2d' | '3d'>('2d');
 
   const valuesRef = useRef(values);
   valuesRef.current = values;
@@ -88,8 +86,6 @@ export default function GasLawLab() {
       running={running}
       onToggleRun={() => setRunning((r) => !r)}
       onReset={reset}
-      view={view}
-      onViewChange={setView}
       hint="เพิ่มอุณหภูมิแล้วดูกราฟการกระจายอัตราเร็วทางขวา — มันไม่ได้เลื่อนไปทั้งก้อน แต่ “แผ่กว้างออก” ด้วย นั่นคือการกระจายแบบแมกซ์เวลล์–โบลต์ซมันน์"
       equations={[
         'PV = nRT',
@@ -99,170 +95,160 @@ export default function GasLawLab() {
         'v_rms = √(3RT/M)',
       ]}
     >
-      {view === '3d' ? (
-        <Scene3DHost
-          sceneId="gas"
-          values={values}
-          running={running}
-          label="กล่องแก๊สสามมิติพร้อมโมเลกุลที่ชนผนัง"
-          onFallback={() => setView('2d')}
-        />
-      ) : (
-        <SimCanvas
-          label="กล่องแก๊สพร้อมโมเลกุลเคลื่อนที่และกราฟการกระจายอัตราเร็ว"
-          running={running}
-          resetKey={resetKey}
-          aspect={16 / 9}
-          minHeight={320}
-          frame={({ ctx, width, height, dt, colors }) => {
-            const v = valuesRef.current;
-            const boxW = width * 0.56;
-            const graphX = boxW + 14;
+      <SimCanvas
+        label="กล่องแก๊สพร้อมโมเลกุลเคลื่อนที่และกราฟการกระจายอัตราเร็ว"
+        running={running}
+        resetKey={resetKey}
+        aspect={16 / 9}
+        minHeight={320}
+        frame={({ ctx, width, height, dt, colors }) => {
+          const v = valuesRef.current;
+          const boxW = width * 0.56;
+          const graphX = boxW + 14;
 
-            // Re-seed velocities whenever the temperature changes: speeds are
-            // drawn from Maxwell–Boltzmann, not scaled uniformly.
-            const count = Math.round(v.particles);
-            if (
-              particlesRef.current.length !== count ||
-              seededTempRef.current !== v.temperature
-            ) {
-              const sigma = Math.sqrt(v.temperature) * 0.9;
-              const normal = () => {
-                const u = Math.random() || 1e-9;
-                const w = Math.random();
-                return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * w);
-              };
-              particlesRef.current = Array.from({ length: count }, () => ({
-                x: Math.random(),
-                y: Math.random(),
-                vx: normal() * sigma,
-                vy: normal() * sigma,
-              }));
-              seededTempRef.current = v.temperature;
-            }
+          // Re-seed velocities whenever the temperature changes: speeds are
+          // drawn from Maxwell–Boltzmann, not scaled uniformly.
+          const count = Math.round(v.particles);
+          if (
+            particlesRef.current.length !== count ||
+            seededTempRef.current !== v.temperature
+          ) {
+            const sigma = Math.sqrt(v.temperature) * 0.9;
+            const normal = () => {
+              const u = Math.random() || 1e-9;
+              const w = Math.random();
+              return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * w);
+            };
+            particlesRef.current = Array.from({ length: count }, () => ({
+              x: Math.random(),
+              y: Math.random(),
+              vx: normal() * sigma,
+              vy: normal() * sigma,
+            }));
+            seededTempRef.current = v.temperature;
+          }
 
-            // Box geometry: width shrinks with volume (a piston on the right).
-            const frac = v.volume / 40;
-            const boxLeft = 20;
-            const boxTop = 20;
-            const boxH = height - 60;
-            const boxWidth = Math.max(40, (boxW - 50) * frac);
+          // Box geometry: width shrinks with volume (a piston on the right).
+          const frac = v.volume / 40;
+          const boxLeft = 20;
+          const boxTop = 20;
+          const boxH = height - 60;
+          const boxWidth = Math.max(40, (boxW - 50) * frac);
 
-            ctx.save();
-            ctx.strokeStyle = colors.border;
-            ctx.lineWidth = 2.5;
-            ctx.strokeRect(boxLeft, boxTop, boxWidth, boxH);
-            ctx.restore();
+          ctx.save();
+          ctx.strokeStyle = colors.border;
+          ctx.lineWidth = 2.5;
+          ctx.strokeRect(boxLeft, boxTop, boxWidth, boxH);
+          ctx.restore();
 
-            // Piston
-            ctx.save();
-            ctx.fillStyle = colors.muted;
-            ctx.fillRect(boxLeft + boxWidth, boxTop, 10, boxH);
-            ctx.fillRect(boxLeft + boxWidth + 10, boxTop + boxH / 2 - 6, boxW - boxWidth - 40, 12);
-            ctx.restore();
+          // Piston
+          ctx.save();
+          ctx.fillStyle = colors.muted;
+          ctx.fillRect(boxLeft + boxWidth, boxTop, 10, boxH);
+          ctx.fillRect(boxLeft + boxWidth + 10, boxTop + boxH / 2 - 6, boxW - boxWidth - 40, 12);
+          ctx.restore();
 
-            // Move the molecules and count wall hits (that is the pressure).
-            const scale = 0.00018;
-            let hits = 0;
-            for (const p of particlesRef.current) {
-              if (dt > 0) {
-                p.x += p.vx * dt * scale * (40 / v.volume) * 8;
-                p.y += p.vy * dt * scale * 8;
-                if (p.x < 0) {
-                  p.x = 0;
-                  p.vx = -p.vx;
-                  hits++;
-                }
-                if (p.x > 1) {
-                  p.x = 1;
-                  p.vx = -p.vx;
-                  hits++;
-                }
-                if (p.y < 0) {
-                  p.y = 0;
-                  p.vy = -p.vy;
-                  hits++;
-                }
-                if (p.y > 1) {
-                  p.y = 1;
-                  p.vy = -p.vy;
-                  hits++;
-                }
+          // Move the molecules and count wall hits (that is the pressure).
+          const scale = 0.00018;
+          let hits = 0;
+          for (const p of particlesRef.current) {
+            if (dt > 0) {
+              p.x += p.vx * dt * scale * (40 / v.volume) * 8;
+              p.y += p.vy * dt * scale * 8;
+              if (p.x < 0) {
+                p.x = 0;
+                p.vx = -p.vx;
+                hits++;
               }
-              ctx.fillStyle = colors.series[1];
-              ctx.beginPath();
-              ctx.arc(boxLeft + p.x * boxWidth, boxTop + p.y * boxH, 2.6, 0, Math.PI * 2);
-              ctx.fill();
+              if (p.x > 1) {
+                p.x = 1;
+                p.vx = -p.vx;
+                hits++;
+              }
+              if (p.y < 0) {
+                p.y = 0;
+                p.vy = -p.vy;
+                hits++;
+              }
+              if (p.y > 1) {
+                p.y = 1;
+                p.vy = -p.vy;
+                hits++;
+              }
             }
-
-            drawLabel(
-              ctx,
-              `V = ${v.volume.toFixed(1)} L · T = ${v.temperature} K · P = ${(gasPressure(v.moles, v.temperature, v.volume / 1000) / 1000).toFixed(0)} kPa`,
-              boxLeft,
-              height - 22,
-              colors,
-              { align: 'left', size: 11.5, color: colors.text },
-            );
-            drawLabel(ctx, `การชนผนัง: ${hits}`, boxLeft + boxWidth / 2, boxTop + 14, colors, {
-              align: 'center',
-              size: 10.5,
-              color: colors.muted,
-            });
-
-            /* Speed distribution */
-            ctx.save();
-            ctx.translate(graphX, 0);
-            const vMax = 2200;
-            const view2d = makeView({
-              width: width - graphX,
-              height,
-              xMin: 0,
-              xMax: vMax,
-              yMin: 0,
-              yMax: maxwellBoltzmann(rmsSpeed(200, MOLAR_MASS_N2) * 0.8, 200, MOLAR_MASS_N2) * 1.1,
-              uniform: false,
-              padding: { left: 42, right: 14, top: 26, bottom: 34 },
-            });
-
-            drawGrid(ctx, view2d, colors, niceStep(vMax), view2d.bounds.yMax / 4);
-            drawAxes(ctx, view2d, colors, { stepX: 500, decimals: 0 });
-
-            const pts: { x: number; y: number }[] = [];
-            for (let i = 0; i <= 200; i++) {
-              const s = (vMax * i) / 200;
-              pts.push({
-                x: view2d.sx(s),
-                y: view2d.sy(maxwellBoltzmann(s, v.temperature, MOLAR_MASS_N2)),
-              });
-            }
-            drawPolyline(ctx, pts, colors.series[0], 2.4);
-
-            // v_rms marker
-            const vr = rmsSpeed(v.temperature, MOLAR_MASS_N2);
-            ctx.save();
-            ctx.strokeStyle = colors.accent;
-            ctx.setLineDash([4, 4]);
-            ctx.lineWidth = 1.6;
+            ctx.fillStyle = colors.series[1];
             ctx.beginPath();
-            ctx.moveTo(view2d.sx(vr), view2d.sy(0));
-            ctx.lineTo(view2d.sx(vr), view2d.sy(view2d.bounds.yMax));
-            ctx.stroke();
-            ctx.restore();
-            drawLabel(ctx, `v_rms = ${vr.toFixed(0)} m/s`, view2d.sx(vr), 16, colors, {
-              align: 'center',
-              size: 10.5,
-              color: colors.accent,
+            ctx.arc(boxLeft + p.x * boxWidth, boxTop + p.y * boxH, 2.6, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          drawLabel(
+            ctx,
+            `V = ${v.volume.toFixed(1)} L · T = ${v.temperature} K · P = ${(gasPressure(v.moles, v.temperature, v.volume / 1000) / 1000).toFixed(0)} kPa`,
+            boxLeft,
+            height - 22,
+            colors,
+            { align: 'left', size: 11.5, color: colors.text },
+          );
+          drawLabel(ctx, `การชนผนัง: ${hits}`, boxLeft + boxWidth / 2, boxTop + 14, colors, {
+            align: 'center',
+            size: 10.5,
+            color: colors.muted,
+          });
+
+          /* Speed distribution */
+          ctx.save();
+          ctx.translate(graphX, 0);
+          const vMax = 2200;
+          const view2d = makeView({
+            width: width - graphX,
+            height,
+            xMin: 0,
+            xMax: vMax,
+            yMin: 0,
+            yMax: maxwellBoltzmann(rmsSpeed(200, MOLAR_MASS_N2) * 0.8, 200, MOLAR_MASS_N2) * 1.1,
+            uniform: false,
+            padding: { left: 42, right: 14, top: 26, bottom: 34 },
+          });
+
+          drawGrid(ctx, view2d, colors, niceStep(vMax), view2d.bounds.yMax / 4);
+          drawAxes(ctx, view2d, colors, { stepX: 500, decimals: 0 });
+
+          const pts: { x: number; y: number }[] = [];
+          for (let i = 0; i <= 200; i++) {
+            const s = (vMax * i) / 200;
+            pts.push({
+              x: view2d.sx(s),
+              y: view2d.sy(maxwellBoltzmann(s, v.temperature, MOLAR_MASS_N2)),
             });
-            drawLabel(ctx, 'การกระจายอัตราเร็ว (m/s)', (width - graphX) / 2, height - 12, colors, {
-              align: 'center',
-              size: 10.5,
-              color: colors.muted,
-              bg: false,
-            });
-            ctx.restore();
-          }}
-        />
-      )}
+          }
+          drawPolyline(ctx, pts, colors.series[0], 2.4);
+
+          // v_rms marker
+          const vr = rmsSpeed(v.temperature, MOLAR_MASS_N2);
+          ctx.save();
+          ctx.strokeStyle = colors.accent;
+          ctx.setLineDash([4, 4]);
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          ctx.moveTo(view2d.sx(vr), view2d.sy(0));
+          ctx.lineTo(view2d.sx(vr), view2d.sy(view2d.bounds.yMax));
+          ctx.stroke();
+          ctx.restore();
+          drawLabel(ctx, `v_rms = ${vr.toFixed(0)} m/s`, view2d.sx(vr), 16, colors, {
+            align: 'center',
+            size: 10.5,
+            color: colors.accent,
+          });
+          drawLabel(ctx, 'การกระจายอัตราเร็ว (m/s)', (width - graphX) / 2, height - 12, colors, {
+            align: 'center',
+            size: 10.5,
+            color: colors.muted,
+            bg: false,
+          });
+          ctx.restore();
+        }}
+      />
     </SimulatorShell>
   );
 }

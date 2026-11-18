@@ -3,7 +3,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { SimulatorShell } from '../SimulatorShell';
 import { SimCanvas } from '../SimCanvas';
-import { Scene3DHost } from '@/components/three/Scene3DHost';
 import { useSimParams, useThrottledState } from '@/lib/simulators/useSimParams';
 import type { ParamSpec, Preset, Readout } from '@/lib/simulators/types';
 import {
@@ -46,7 +45,6 @@ export default function SoundLab() {
     PRESETS,
   );
   const [running, setRunning] = useState(true);
-  const [view, setView] = useState<'2d' | '3d'>('2d');
   const [, setLive] = useThrottledState({ t: 0 }, 250);
 
   const valuesRef = useRef(values);
@@ -95,8 +93,6 @@ export default function SoundLab() {
       running={running}
       onToggleRun={() => setRunning((r) => !r)}
       onReset={reset}
-      view={view}
-      onViewChange={setView}
       hint="ตั้งความถี่ให้ต่างกัน 3 Hz แล้วนับจำนวน “ก้อน” ของคลื่นรวมในหนึ่งวินาที — จะได้ 3 ก้อนพอดี นั่นคือบีตที่หูได้ยินเป็นเสียงดัง–เบาสลับกัน"
       equations={[
         'f_beat = |f₁ − f₂|',
@@ -105,117 +101,107 @@ export default function SoundLab() {
         'I = P / 4πr²',
       ]}
     >
-      {view === '3d' ? (
-        <Scene3DHost
-          sceneId="sound"
-          values={values}
-          running={running}
-          label="หน้าคลื่นเสียงทรงกลมจากแหล่งกำเนิดที่กำลังเคลื่อนที่"
-          onFallback={() => setView('2d')}
-        />
-      ) : (
-        <SimCanvas
-          label="กราฟคลื่นเสียงสองความถี่และคลื่นรวมที่เกิดบีต"
-          running={running}
-          resetKey={resetKey}
-          aspect={16 / 9}
-          minHeight={300}
-          frame={({ ctx, width, height, time, colors }) => {
-            const v = valuesRef.current;
+      <SimCanvas
+        label="กราฟคลื่นเสียงสองความถี่และคลื่นรวมที่เกิดบีต"
+        running={running}
+        resetKey={resetKey}
+        aspect={16 / 9}
+        minHeight={300}
+        frame={({ ctx, width, height, time, colors }) => {
+          const v = valuesRef.current;
 
-            // Slow the audio frequencies down by a fixed factor so the shape is
-            // visible; the beat pattern is preserved exactly.
-            const slow = 0.01;
-            const span = 1.4; // seconds of "slowed" signal shown
-            const topH = height * 0.44;
+          // Slow the audio frequencies down by a fixed factor so the shape is
+          // visible; the beat pattern is preserved exactly.
+          const slow = 0.01;
+          const span = 1.4; // seconds of "slowed" signal shown
+          const topH = height * 0.44;
 
-            /* Two source waves */
-            const viewTop = makeView({
-              width,
-              height: topH,
-              xMin: 0,
-              xMax: span,
-              yMin: -1.2,
-              yMax: 1.2,
-              uniform: false,
-              padding: { left: 40, right: 16, top: 16, bottom: 18 },
-            });
+          /* Two source waves */
+          const viewTop = makeView({
+            width,
+            height: topH,
+            xMin: 0,
+            xMax: span,
+            yMin: -1.2,
+            yMax: 1.2,
+            uniform: false,
+            padding: { left: 40, right: 16, top: 16, bottom: 18 },
+          });
 
-            drawGrid(ctx, viewTop, colors, niceStep(span), 0.5);
-            drawAxes(ctx, viewTop, colors, { stepX: niceStep(span), decimals: 1 });
+          drawGrid(ctx, viewTop, colors, niceStep(span), 0.5);
+          drawAxes(ctx, viewTop, colors, { stepX: niceStep(span), decimals: 1 });
 
-            const wave = (f: number, color: string, offset: number) => {
-              const pts: { x: number; y: number }[] = [];
-              for (let i = 0; i <= 400; i++) {
-                const t = (span * i) / 400;
-                const y = Math.sin(2 * Math.PI * f * slow * (t + time));
-                pts.push({ x: viewTop.sx(t), y: viewTop.sy(y * 0.45 + offset) });
-              }
-              drawPolyline(ctx, pts, color, 1.8);
-            };
-
-            wave(v.f1, colors.series[0], 0.55);
-            wave(v.f2, colors.series[1], -0.55);
-
-            drawLabel(ctx, `f₁ = ${v.f1} Hz`, viewTop.sx(0) + 6, viewTop.sy(1.0), colors, {
-              align: 'left',
-              size: 10.5,
-              color: colors.series[0],
-            });
-            drawLabel(ctx, `f₂ = ${v.f2} Hz`, viewTop.sx(0) + 6, viewTop.sy(-0.1), colors, {
-              align: 'left',
-              size: 10.5,
-              color: colors.series[1],
-            });
-
-            /* Superposition with the beat envelope */
-            ctx.save();
-            ctx.translate(0, topH);
-            const viewBot = makeView({
-              width,
-              height: height - topH,
-              xMin: 0,
-              xMax: span,
-              yMin: -2.4,
-              yMax: 2.4,
-              uniform: false,
-              padding: { left: 40, right: 16, top: 12, bottom: 26 },
-            });
-
-            drawGrid(ctx, viewBot, colors, niceStep(span), 1);
-            drawAxes(ctx, viewBot, colors, { stepX: niceStep(span), decimals: 1 });
-
-            const sum: { x: number; y: number }[] = [];
-            const envUp: { x: number; y: number }[] = [];
-            const envDown: { x: number; y: number }[] = [];
-            for (let i = 0; i <= 600; i++) {
-              const t = (span * i) / 600;
-              const tt = t + time;
-              const y =
-                Math.sin(2 * Math.PI * v.f1 * slow * tt) + Math.sin(2 * Math.PI * v.f2 * slow * tt);
-              sum.push({ x: viewBot.sx(t), y: viewBot.sy(y) });
-              const env = 2 * Math.abs(Math.cos(Math.PI * (v.f1 - v.f2) * slow * tt));
-              envUp.push({ x: viewBot.sx(t), y: viewBot.sy(env) });
-              envDown.push({ x: viewBot.sx(t), y: viewBot.sy(-env) });
+          const wave = (f: number, color: string, offset: number) => {
+            const pts: { x: number; y: number }[] = [];
+            for (let i = 0; i <= 400; i++) {
+              const t = (span * i) / 400;
+              const y = Math.sin(2 * Math.PI * f * slow * (t + time));
+              pts.push({ x: viewTop.sx(t), y: viewTop.sy(y * 0.45 + offset) });
             }
-            drawPolyline(ctx, envUp, colors.faint, 1.4, [4, 4]);
-            drawPolyline(ctx, envDown, colors.faint, 1.4, [4, 4]);
-            drawPolyline(ctx, sum, colors.accent, 2.2);
+            drawPolyline(ctx, pts, color, 1.8);
+          };
 
-            drawLabel(
-              ctx,
-              `คลื่นรวม — บีต ${Math.abs(v.f1 - v.f2).toFixed(1)} ครั้ง/วินาที`,
-              viewBot.sx(0) + 6,
-              viewBot.sy(2.1),
-              colors,
-              { align: 'left', size: 11, color: colors.accent },
-            );
-            ctx.restore();
+          wave(v.f1, colors.series[0], 0.55);
+          wave(v.f2, colors.series[1], -0.55);
 
-            setLive({ t: time });
-          }}
-        />
-      )}
+          drawLabel(ctx, `f₁ = ${v.f1} Hz`, viewTop.sx(0) + 6, viewTop.sy(1.0), colors, {
+            align: 'left',
+            size: 10.5,
+            color: colors.series[0],
+          });
+          drawLabel(ctx, `f₂ = ${v.f2} Hz`, viewTop.sx(0) + 6, viewTop.sy(-0.1), colors, {
+            align: 'left',
+            size: 10.5,
+            color: colors.series[1],
+          });
+
+          /* Superposition with the beat envelope */
+          ctx.save();
+          ctx.translate(0, topH);
+          const viewBot = makeView({
+            width,
+            height: height - topH,
+            xMin: 0,
+            xMax: span,
+            yMin: -2.4,
+            yMax: 2.4,
+            uniform: false,
+            padding: { left: 40, right: 16, top: 12, bottom: 26 },
+          });
+
+          drawGrid(ctx, viewBot, colors, niceStep(span), 1);
+          drawAxes(ctx, viewBot, colors, { stepX: niceStep(span), decimals: 1 });
+
+          const sum: { x: number; y: number }[] = [];
+          const envUp: { x: number; y: number }[] = [];
+          const envDown: { x: number; y: number }[] = [];
+          for (let i = 0; i <= 600; i++) {
+            const t = (span * i) / 600;
+            const tt = t + time;
+            const y =
+              Math.sin(2 * Math.PI * v.f1 * slow * tt) + Math.sin(2 * Math.PI * v.f2 * slow * tt);
+            sum.push({ x: viewBot.sx(t), y: viewBot.sy(y) });
+            const env = 2 * Math.abs(Math.cos(Math.PI * (v.f1 - v.f2) * slow * tt));
+            envUp.push({ x: viewBot.sx(t), y: viewBot.sy(env) });
+            envDown.push({ x: viewBot.sx(t), y: viewBot.sy(-env) });
+          }
+          drawPolyline(ctx, envUp, colors.faint, 1.4, [4, 4]);
+          drawPolyline(ctx, envDown, colors.faint, 1.4, [4, 4]);
+          drawPolyline(ctx, sum, colors.accent, 2.2);
+
+          drawLabel(
+            ctx,
+            `คลื่นรวม — บีต ${Math.abs(v.f1 - v.f2).toFixed(1)} ครั้ง/วินาที`,
+            viewBot.sx(0) + 6,
+            viewBot.sy(2.1),
+            colors,
+            { align: 'left', size: 11, color: colors.accent },
+          );
+          ctx.restore();
+
+          setLive({ t: time });
+        }}
+      />
     </SimulatorShell>
   );
 }

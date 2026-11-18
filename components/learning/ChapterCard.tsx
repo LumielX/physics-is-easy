@@ -16,7 +16,6 @@ export function ChapterCard({
   className?: string;
 }) {
   const strand = STRAND_MAP[chapter.strand];
-  const has3D = chapter.simulators.length > 0 && chapter.keywords.includes('3d');
 
   return (
     <Link
@@ -71,12 +70,6 @@ export function ChapterCard({
           <Icon name="chart" size={14} />
           {DIFFICULTY_LABEL[chapter.difficulty]}
         </span>
-        {has3D && (
-          <span className="inline-flex items-center gap-1.5 text-[var(--accent-text)]">
-            <Icon name="cube" size={14} />
-            3D
-          </span>
-        )}
       </div>
     </Link>
   );

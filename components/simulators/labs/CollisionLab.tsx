@@ -3,7 +3,6 @@
 import { useRef, useState } from 'react';
 import { SimulatorShell } from '../SimulatorShell';
 import { SimCanvas } from '../SimCanvas';
-import { Scene3DHost } from '@/components/three/Scene3DHost';
 import { useSimParams, useThrottledState } from '@/lib/simulators/useSimParams';
 import type { ParamSpec, Preset, Readout } from '@/lib/simulators/types';
 import { drawArrow, drawCircle, drawLabel, roundRect } from '@/lib/simulators/draw';
@@ -40,8 +39,7 @@ export default function CollisionLab() {
     PRESETS,
   );
   const [running, setRunning] = useState(true);
-  const [view, setView] = useState<'2d' | '3d'>('2d');
-  const [live, setLive] = useThrottledState({ collided: false, p: 0, ke: 0 }, 100);
+  const [, setLive] = useThrottledState({ collided: false, p: 0, ke: 0 }, 100);
 
   const valuesRef = useRef(values);
   valuesRef.current = values;
@@ -90,8 +88,6 @@ export default function CollisionLab() {
         reset();
         setTimeout(resetSim, 0);
       }}
-      view={view}
-      onViewChange={setView}
       hint="ตั้งมวลให้เท่ากันแล้วชนแบบ e = 1 จะเห็นว่าทั้งสองก้อน “แลกความเร็วกัน” พอดี — ผลลัพธ์นี้เกิดเฉพาะเมื่อมวลเท่ากันเท่านั้น"
       equations={[
         'm₁u₁ + m₂u₂ = m₁v₁ + m₂v₂',
@@ -99,136 +95,126 @@ export default function CollisionLab() {
         'E_k = ½mv²  (คงที่เมื่อ e = 1)',
       ]}
     >
-      {view === '3d' ? (
-        <Scene3DHost
-          sceneId="collision"
-          values={values}
-          running={running}
-          label="การชนของวัตถุสองก้อนในสามมิติ"
-          onFallback={() => setView('2d')}
-        />
-      ) : (
-        <SimCanvas
-          label="วัตถุสองก้อนเคลื่อนที่เข้าหากันและชนกัน พร้อมแท่งโมเมนตัมและพลังงาน"
-          running={running}
-          resetKey={resetKey}
-          aspect={16 / 9}
-          minHeight={300}
-          frame={({ ctx, width, height, dt, colors }) => {
-            const v = valuesRef.current;
-            const st = stateRef.current;
+      <SimCanvas
+        label="วัตถุสองก้อนเคลื่อนที่เข้าหากันและชนกัน พร้อมแท่งโมเมนตัมและพลังงาน"
+        running={running}
+        resetKey={resetKey}
+        aspect={16 / 9}
+        minHeight={300}
+        frame={({ ctx, width, height, dt, colors }) => {
+          const v = valuesRef.current;
+          const st = stateRef.current;
 
-            const r1 = 0.32 + v.m1 * 0.1;
-            const r2 = 0.32 + v.m2 * 0.1;
+          const r1 = 0.32 + v.m1 * 0.1;
+          const r2 = 0.32 + v.m2 * 0.1;
 
-            if (dt > 0) {
-              st.x1 += st.v1 * dt;
-              st.x2 += st.v2 * dt;
+          if (dt > 0) {
+            st.x1 += st.v1 * dt;
+            st.x2 += st.v2 * dt;
 
-              if (!st.collided && st.x2 - st.x1 <= r1 + r2 && st.v1 > st.v2) {
-                const out = collision1D(v.m1, st.v1, v.m2, st.v2, v.e);
-                st.v1 = out.v1;
-                st.v2 = out.v2;
-                st.collided = true;
-                // Separate them so they don't re-trigger on the same frame.
-                const overlap = r1 + r2 - (st.x2 - st.x1);
-                st.x1 -= overlap / 2;
-                st.x2 += overlap / 2;
-              }
-
-              if (st.x1 < -14 || st.x2 > 14 || (st.collided && Math.abs(st.x2 - st.x1) > 22)) {
-                resetSim();
-              }
+            if (!st.collided && st.x2 - st.x1 <= r1 + r2 && st.v1 > st.v2) {
+              const out = collision1D(v.m1, st.v1, v.m2, st.v2, v.e);
+              st.v1 = out.v1;
+              st.v2 = out.v2;
+              st.collided = true;
+              // Separate them so they don't re-trigger on the same frame.
+              const overlap = r1 + r2 - (st.x2 - st.x1);
+              st.x1 -= overlap / 2;
+              st.x2 += overlap / 2;
             }
 
-            const cy = height * 0.44;
-            const pxPerM = (width - 80) / 28;
-            const toPx = (x: number) => width / 2 + x * pxPerM;
+            if (st.x1 < -14 || st.x2 > 14 || (st.collided && Math.abs(st.x2 - st.x1) > 22)) {
+              resetSim();
+            }
+          }
 
-            // Track line
-            ctx.save();
-            ctx.strokeStyle = colors.border;
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(30, cy + 34);
-            ctx.lineTo(width - 30, cy + 34);
-            ctx.stroke();
-            ctx.restore();
+          const cy = height * 0.44;
+          const pxPerM = (width - 80) / 28;
+          const toPx = (x: number) => width / 2 + x * pxPerM;
 
-            const ball = (x: number, r: number, vel: number, mass: number, color: string, name: string) => {
-              const px = toPx(x);
-              const rp = r * pxPerM;
-              drawCircle(ctx, px, cy, rp, color, colors.surface, 2);
-              ctx.fillStyle = colors.surface;
-              ctx.font = '600 11px system-ui, sans-serif';
-              ctx.textAlign = 'center';
-              ctx.textBaseline = 'middle';
-              ctx.fillText(`${mass}`, px, cy);
-              if (Math.abs(vel) > 0.05) {
-                const len = Math.min(80, Math.abs(vel) * 12);
-                drawArrow(ctx, px, cy - rp - 12, px + Math.sign(vel) * len, cy - rp - 12, color, 2.5);
-              }
-              drawLabel(ctx, `${name}: ${vel.toFixed(2)} m/s`, px, cy + rp + 22, colors, {
-                align: 'center',
-                color,
-                size: 11,
-              });
-            };
+          // Track line
+          ctx.save();
+          ctx.strokeStyle = colors.border;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(30, cy + 34);
+          ctx.lineTo(width - 30, cy + 34);
+          ctx.stroke();
+          ctx.restore();
 
-            ball(st.x1, r1, st.v1, v.m1, colors.series[0], 'ก้อน 1');
-            ball(st.x2, r2, st.v2, v.m2, colors.series[1], 'ก้อน 2');
+          const ball = (x: number, r: number, vel: number, mass: number, color: string, name: string) => {
+            const px = toPx(x);
+            const rp = r * pxPerM;
+            drawCircle(ctx, px, cy, rp, color, colors.surface, 2);
+            ctx.fillStyle = colors.surface;
+            ctx.font = '600 11px system-ui, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${mass}`, px, cy);
+            if (Math.abs(vel) > 0.05) {
+              const len = Math.min(80, Math.abs(vel) * 12);
+              drawArrow(ctx, px, cy - rp - 12, px + Math.sign(vel) * len, cy - rp - 12, color, 2.5);
+            }
+            drawLabel(ctx, `${name}: ${vel.toFixed(2)} m/s`, px, cy + rp + 22, colors, {
+              align: 'center',
+              color,
+              size: 11,
+            });
+          };
 
-            drawLabel(
-              ctx,
-              st.collided ? 'หลังชน' : 'ก่อนชน',
-              width / 2,
-              20,
-              colors,
-              { align: 'center', color: st.collided ? colors.ok : colors.muted, size: 12.5 },
-            );
+          ball(st.x1, r1, st.v1, v.m1, colors.series[0], 'ก้อน 1');
+          ball(st.x2, r2, st.v2, v.m2, colors.series[1], 'ก้อน 2');
 
-            /* Momentum + energy bars */
-            const p = v.m1 * st.v1 + v.m2 * st.v2;
-            const ke = 0.5 * v.m1 * st.v1 ** 2 + 0.5 * v.m2 * st.v2 ** 2;
-            const pMax = Math.max(Math.abs(pBefore), 1) * 1.3;
-            const keMax = Math.max(result.keBefore, 1) * 1.1;
+          drawLabel(
+            ctx,
+            st.collided ? 'หลังชน' : 'ก่อนชน',
+            width / 2,
+            20,
+            colors,
+            { align: 'center', color: st.collided ? colors.ok : colors.muted, size: 12.5 },
+          );
 
-            const barY = height - 56;
-            const barW = width - 160;
+          /* Momentum + energy bars */
+          const p = v.m1 * st.v1 + v.m2 * st.v2;
+          const ke = 0.5 * v.m1 * st.v1 ** 2 + 0.5 * v.m2 * st.v2 ** 2;
+          const pMax = Math.max(Math.abs(pBefore), 1) * 1.3;
+          const keMax = Math.max(result.keBefore, 1) * 1.1;
 
-            const bar = (y: number, frac: number, color: string, label: string) => {
-              ctx.fillStyle = colors.grid;
-              roundRect(ctx, 80, y, barW, 12, 6);
-              ctx.fill();
-              ctx.fillStyle = color;
-              roundRect(ctx, 80, y, Math.max(0, Math.min(1, frac)) * barW, 12, 6);
-              ctx.fill();
-              drawLabel(ctx, label, 76, y + 6, colors, {
-                align: 'right',
-                size: 10,
-                color: colors.muted,
-                bg: false,
-              });
-            };
+          const barY = height - 56;
+          const barW = width - 160;
 
-            bar(barY, Math.abs(p) / pMax, colors.series[2], 'โมเมนตัม');
-            bar(barY + 24, ke / keMax, colors.series[3], 'พลังงานจลน์');
-
-            drawLabel(ctx, `p = ${p.toFixed(2)} kg·m/s`, 84 + barW, barY + 6, colors, {
+          const bar = (y: number, frac: number, color: string, label: string) => {
+            ctx.fillStyle = colors.grid;
+            roundRect(ctx, 80, y, barW, 12, 6);
+            ctx.fill();
+            ctx.fillStyle = color;
+            roundRect(ctx, 80, y, Math.max(0, Math.min(1, frac)) * barW, 12, 6);
+            ctx.fill();
+            drawLabel(ctx, label, 76, y + 6, colors, {
               align: 'right',
               size: 10,
-              color: colors.series[2],
+              color: colors.muted,
+              bg: false,
             });
-            drawLabel(ctx, `E_k = ${ke.toFixed(2)} J`, 84 + barW, barY + 30, colors, {
-              align: 'right',
-              size: 10,
-              color: colors.series[3],
-            });
+          };
 
-            setLive({ collided: st.collided, p, ke });
-          }}
-        />
-      )}
+          bar(barY, Math.abs(p) / pMax, colors.series[2], 'โมเมนตัม');
+          bar(barY + 24, ke / keMax, colors.series[3], 'พลังงานจลน์');
+
+          drawLabel(ctx, `p = ${p.toFixed(2)} kg·m/s`, 84 + barW, barY + 6, colors, {
+            align: 'right',
+            size: 10,
+            color: colors.series[2],
+          });
+          drawLabel(ctx, `E_k = ${ke.toFixed(2)} J`, 84 + barW, barY + 30, colors, {
+            align: 'right',
+            size: 10,
+            color: colors.series[3],
+          });
+
+          setLive({ collided: st.collided, p, ke });
+        }}
+      />
     </SimulatorShell>
   );
 }

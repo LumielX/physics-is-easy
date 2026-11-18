@@ -12,7 +12,6 @@ import {
   drawLabel,
   drawPolyline,
   makeView,
-  niceStep,
 } from '@/lib/simulators/draw';
 import { photoelectric, thresholdWavelengthNm } from '@/lib/physics-engine/modern';
 import { wavelengthToRgb } from '@/lib/physics-engine/optics';
@@ -109,7 +108,6 @@ export default function PhotoelectricLab() {
 
           const sceneW = width * 0.52;
           const plateX = sceneW * 0.62;
-          const midY = height * 0.42;
 
           /* Incoming light */
           const rays = Math.round(3 + (v.intensity / 100) * 7);

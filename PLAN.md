@@ -2,6 +2,8 @@
 
 > แผนงานฉบับสมบูรณ์ของโปรเจกต์ "Physics is Easy" (Phase 1–2 Deliverable)
 > Created by Narawit Luekhajon
+>
+> **หมายเหตุ:** แผนนี้เขียนก่อนเริ่มสร้าง ต่อมาได้เอาโหมด 3D ออก เครื่องจำลองทุกตัวเป็น 2D แล้ว (ดู DECISIONS D-016)
 
 ---
 

@@ -9,7 +9,7 @@ import type { ParamSpec, Preset, Readout } from '@/lib/simulators/types';
 export interface SimulatorShellProps {
   title: string;
   description?: string;
-  /** The drawing surface (a <SimCanvas> or the lazily-loaded 3-D scene). */
+  /** The drawing surface (a <SimCanvas>). */
   children: ReactNode;
   params: ParamSpec[];
   values: Record<string, number>;
@@ -22,9 +22,6 @@ export interface SimulatorShellProps {
   onToggleRun: () => void;
   onReset: () => void;
   onStep?: () => void;
-  /** Present only for chapters where a 3-D view genuinely helps. */
-  view?: '2d' | '3d';
-  onViewChange?: (v: '2d' | '3d') => void;
   /** Explains what the learner should notice. */
   hint?: string;
   /** Equations the simulation is actually solving, as plain text. */
@@ -61,8 +58,6 @@ export function SimulatorShell({
   onToggleRun,
   onReset,
   onStep,
-  view,
-  onViewChange,
   hint,
   equations,
   extraControls,
@@ -92,32 +87,6 @@ export function SimulatorShell({
               </p>
             )}
           </div>
-
-          {view && onViewChange && (
-            <div
-              role="group"
-              aria-label="เลือกมุมมอง"
-              className="flex shrink-0 rounded-full border border-[var(--border)] bg-[var(--surface)] p-0.5"
-            >
-              {(['2d', '3d'] as const).map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => onViewChange(v)}
-                  aria-pressed={view === v}
-                  className={clsx(
-                    'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.78rem] font-semibold transition-colors',
-                    view === v
-                      ? 'bg-[var(--accent)] text-[var(--accent-contrast)]'
-                      : 'text-[var(--text-muted)] hover:text-[var(--text)]',
-                  )}
-                >
-                  <Icon name={v === '2d' ? 'square' : 'cube'} size={14} />
-                  {v.toUpperCase()}
-                </button>
-              ))}
-            </div>
-          )}
         </header>
       )}
 

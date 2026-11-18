@@ -129,7 +129,7 @@ export interface Chapter {
   /** Stable id, e.g. "m4-02". Used by progress storage — never change it. */
   id: string;
   grade: Grade;
-  /** Chapter number in the IPST book sequence (1–19). */
+  /** Chapter number within this course (1–19). */
   number: number;
   /** URL segment, e.g. "linear-motion". */
   slug: string;

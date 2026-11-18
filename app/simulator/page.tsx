@@ -22,7 +22,7 @@ export default function SimulatorIndexPage() {
       <SectionTitle
         eyebrow="ห้องทดลองเสมือน"
         title="เครื่องจำลองทั้งหมด"
-        description={`${sims.length} เครื่องจำลอง ทุกตัวแก้สมการฟิสิกส์จริงแบบเรียลไทม์ ไม่ใช่ภาพเคลื่อนไหวที่ตั้งค่าไว้ล่วงหน้า — ${sims.filter((s) => s.supports3D).length} ตัวสลับดูแบบ 3 มิติได้`}
+        description={`${sims.length} เครื่องจำลอง ทุกตัวแก้สมการฟิสิกส์จริงแบบเรียลไทม์ ไม่ใช่ภาพเคลื่อนไหวที่ตั้งค่าไว้ล่วงหน้า`}
         className="mb-8"
       />
 
@@ -50,12 +50,6 @@ export default function SimulatorIndexPage() {
                       <div className="pie-lift flex h-full flex-col gap-3 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5">
                         <div className="flex items-start justify-between gap-3">
                           <h3 className="text-[1.05rem] font-semibold">{sim.title}</h3>
-                          {sim.supports3D && (
-                            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2.5 py-1 text-[0.7rem] font-semibold text-[var(--accent-text)]">
-                              <Icon name="cube" size={12} />
-                              3D
-                            </span>
-                          )}
                         </div>
                         <p className="text-[0.9rem] leading-relaxed text-[var(--text-muted)]">
                           {sim.subtitle}
@@ -99,12 +93,6 @@ export default function SimulatorIndexPage() {
           );
         })}
       </div>
-
-      <p className="mt-12 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface-2)] px-5 py-4 text-[0.88rem] text-[var(--text-muted)]">
-        <strong className="text-[var(--text)]">หมายเหตุเรื่องโหมด 3 มิติ:</strong>{' '}
-        โหมด 3D จะโหลดเฉพาะเมื่อกดเท่านั้น และถ้าอุปกรณ์ของคุณไม่รองรับหรือแสดงผลไม่ลื่นพอ
-        ระบบจะสลับกลับไปใช้ 2D ให้อัตโนมัติ — ซึ่งให้ข้อมูลทางฟิสิกส์เหมือนกันทุกอย่าง
-      </p>
     </div>
   );
 }

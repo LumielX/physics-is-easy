@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import { SimulatorShell } from '../SimulatorShell';
 import { SimCanvas } from '../SimCanvas';
 import { useSimParams, useThrottledState } from '@/lib/simulators/useSimParams';
@@ -27,7 +27,7 @@ export default function LensMirrorLab() {
     PARAMS,
     PRESETS,
   );
-  const [live, setLive] = useThrottledState({ dragging: false }, 200);
+  const [, setLive] = useThrottledState({ dragging: false }, 200);
   const valuesRef = useRef(values);
   valuesRef.current = values;
 

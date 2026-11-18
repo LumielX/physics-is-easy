@@ -32,8 +32,6 @@ export type IconName =
   | 'target'
   | 'chart'
   | 'sparkles'
-  | 'cube'
-  | 'square'
   | 'bulb'
   | 'warning'
   | 'info'
@@ -131,18 +129,6 @@ const PATHS: Record<IconName, React.ReactNode> = {
     <>
       <path d="M12 3.5 13.6 9 19 10.6 13.6 12.2 12 17.6 10.4 12.2 5 10.6 10.4 9Z" />
       <path d="M18.5 15.5 19.3 18 21.5 18.8 19.3 19.6 18.5 22 17.7 19.6 15.5 18.8 17.7 18Z" />
-    </>
-  ),
-  cube: (
-    <>
-      <path d="m12 2.8 8.2 4.6v9.2L12 21.2 3.8 16.6V7.4Z" />
-      <path d="m3.8 7.4 8.2 4.6 8.2-4.6M12 12v9.2" />
-    </>
-  ),
-  square: (
-    <>
-      <rect x="3.6" y="3.6" width="16.8" height="16.8" rx="2.4" />
-      <path d="M3.6 9.6h16.8M9.6 3.6v16.8" />
     </>
   ),
   bulb: (
